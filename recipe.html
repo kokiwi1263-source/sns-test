@@ -318,7 +318,7 @@ function render(){
         cat,
         ingredients: ing,
         steps: st,
-        photoUrl,
+photoUrl: (photoUrl.value || "").trim(),
         createdAt: serverTimestamp()
       });
 
