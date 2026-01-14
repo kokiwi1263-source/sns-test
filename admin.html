@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>管理者ページ</title>
+  <style>
+    body{font-family:system-ui,-apple-system;background:#f5f5f5;margin:0}
+    header{background:#111827;color:#fff;padding:16px}
+    main{max-width:900px;margin:16px auto;padding:0 12px}
+    .card{background:#fff;border-radius:12px;padding:12px;margin-bottom:12px}
+    .muted{color:#666;font-size:12px}
+    input,textarea,button{width:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid #ddd;margin-top:8px}
+    button{background:#111827;color:#fff;border:none;font-weight:800;cursor:pointer}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .row>*{flex:1;min-width:220px}
+    .danger{background:#ef4444}
+    .gray{background:#6b7280}
+    table{width:100%;border-collapse:collapse}
+    td,th{border-bottom:1px solid #eee;padding:8px;font-size:13px;vertical-align:top}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:8px}
+  </style>
+</head>
+<body>
+<header>
+  <h1>管理者ページ</h1>
+  <div id="me" class="muted"></div>
+</header>
+<main>
+  <div class="card">
+    <h2>概要</h2>
+    <div class="row">
+      <div><div class="muted">登録人数（この端末内）</div><div id="count"></div></div>
+      <div><div class="muted">BAN人数</div><div id="banCount"></div></div>
+      <div><div class="muted">通報件数</div><div id="repCount"></div></div>
+    </div>
+    <button id="logout" class="gray" type="button">ログアウト</button>
+  </div>
+
+  <div class="card">
+    <h2>BAN / 解除</h2>
+    <div class="muted">BANすると、そのユーザーはログインできなくなります（この端末内）。</div>
+    <div class="row">
+      <input id="banUserId" placeholder="userId（例：保護者A#1234）">
+      <button id="banBtn" class="danger" type="button">BANする</button>
+    </div>
+    <div class="row">
+      <input id="unbanUserId" placeholder="解除するuserId">
+      <button id="unbanBtn" type="button">BAN解除</button>
+    </div>
+    <div class="muted">登録ユーザー一覧からコピーして使うのがラク。</div>
+  </div>
+
+  <div class="card">
+    <h2>登録ユーザー一覧</h2>
+    <table>
+      <thead><tr><th>名前</th><th>userId</th><th>登録日時</th></tr></thead>
+      <tbody id="users"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>通報一覧</h2>
+    <table>
+      <thead><tr><th>日時</th><th>通報者</th><th>対象</th><th>理由</th></tr></thead>
+      <tbody id="reports"></tbody>
+    </table>
+    <button id="clearReports" class="gray" type="button">通報を全消し（管理者）</button>
+  </div>
+</main>
+
+<script>
+  const AUTH_KEY="sns_user";
+  const USERS_KEY="sns_users_v1";
+  const BAN_KEY="sns_ban_v1";
+  const REPORT_KEY="sns_reports_v1";
+
+  const u = JSON.parse(localStorage.getItem(AUTH_KEY));
+  if(!u || u.role!=="admin") location.href="./auth.html";
+  document.getElementById("me").textContent = `管理者：${u.name}`;
+
+  function load(k,def){ return JSON.parse(localStorage.getItem(k) || JSON.stringify(def)); }
+  function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+
+  function render(){
+    const users = load(USERS_KEY,[]);
+    const bans = load(BAN_KEY,[]);
+    const reps = load(REPORT_KEY,[]);
+    document.getElementById("count").textContent = users.length + " 人";
+    document.getElementById("banCount").textContent = bans.length + " 人";
+    document.getElementById("repCount").textContent = reps.length + " 件";
+
+    const ut = document.getElementById("users");
+    ut.innerHTML="";
+    users.forEach(x=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${x.name}</td><td><code>${x.userId}</code></td><td>${x.createdAt||""}</td>`;
+      ut.appendChild(tr);
+    });
+
+    const rt = document.getElementById("reports");
+    rt.innerHTML="";
+    reps.slice().reverse().forEach(r=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${r.time}</td><td>${r.reporter}</td><td>${r.target}</td><td>${r.reason}</td>`;
+      rt.appendChild(tr);
+    });
+  }
+
+  document.getElementById("banBtn").onclick=()=>{
+    const id=document.getElementById("banUserId").value.trim();
+    if(!id) return;
+    const bans = load(BAN_KEY,[]);
+    if(!bans.includes(id)) bans.push(id);
+    save(BAN_KEY,bans);
+    render();
+    alert("BANしました：" + id);
+  };
+
+  document.getElementById("unbanBtn").onclick=()=>{
+    const id=document.getElementById("unbanUserId").value.trim();
+    if(!id) return;
+    save(BAN_KEY, load(BAN_KEY,[]).filter(x=>x!==id));
+    render();
+    alert("BAN解除：" + id);
+  };
+
+  document.getElementById("clearReports").onclick=()=>{
+    if(!confirm("通報を全部消しますか？")) return;
+    save(REPORT_KEY,[]);
+    render();
+  };
+
+  document.getElementById("logout").onclick=()=>{
+    localStorage.removeItem(AUTH_KEY);
+    location.href="./auth.html";
+  };
+
+  render();
+</script>
+</body>
+</html>

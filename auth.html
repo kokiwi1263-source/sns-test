@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ログイン</title>
+  <style>
+    :root{ --bg:#f3f4f6; --card:#fff; --text:#111827; --mut:#6b7280; --line:#e5e7eb; --pri:#4f46e5; }
+    body{ margin:0; font-family:system-ui,-apple-system; background:var(--bg); color:var(--text); }
+    main{ max-width:420px; margin:18px auto 90px; padding:0 14px; }
+    .card{ background:var(--card); border-radius:16px; padding:14px; box-shadow:0 10px 22px rgba(0,0,0,.10); }
+    h1{ margin:0 0 10px; font-size:20px; font-weight:900; }
+    input,button{ width:100%; box-sizing:border-box; padding:12px; border-radius:14px; border:1px solid var(--line); margin-top:10px; }
+    button{ border:none; background:var(--pri); color:#fff; font-weight:900; cursor:pointer; }
+    .muted{ color:var(--mut); font-size:12px; margin-top:10px; white-space:pre-wrap; }
+    .row{ display:flex; gap:10px; }
+    .row > *{ flex:1; }
+    label{ display:flex; gap:8px; align-items:center; margin-top:10px; font-size:12px; color:var(--mut); }
+    a{ color:var(--pri); text-decoration:none; font-weight:900; }
+    .hint{ font-size:12px; color:var(--mut); margin-top:6px; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>ログイン（メール不要）</h1>
+
+    <input id="name" placeholder="名前" />
+    <input id="pin" placeholder="暗証番号（4桁）" inputmode="numeric" maxlength="4" />
+
+    <div class="hint">※4桁PINはこの端末での本人確認用（Firebaseのパスワードではない）</div>
+
+    <label>
+      <input type="checkbox" id="agree" />
+      <span><a href="./terms.html" target="_blank" rel="noopener">利用規約</a>に同意します</span>
+    </label>
+
+    <div class="row">
+      <button id="loginBtn" style="background:#111827;">ログイン</button>
+      <button id="signupBtn">新規登録</button>
+    </div>
+
+    <div id="msg" class="muted"></div>
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import {
+    getAuth,
+    signInAnonymously
+  } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBsL9VrxyefbumHUKsQRfgoGQf2tJkYZtE",
+    authDomain: "parent-beta-sns.firebaseapp.com",
+    projectId: "parent-beta-sns",
+    storageBucket: "parent-beta-sns.firebasestorage.app",
+    messagingSenderId: "331616157000",
+    appId: "1:331616157000:web:01e55e9d864e93028c077d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  const $ = (id) => document.getElementById(id);
+  const msg = $("msg");
+  const KEY_PIN = "sns_pin_map"; // { uid: "1234" }
+
+  function show(t){ msg.textContent = t; }
+
+  function validPin(pin){
+    return /^[0-9]{4}$/.test(pin);
+  }
+
+  function getPinMap(){
+    try{ return JSON.parse(localStorage.getItem(KEY_PIN) || "{}"); }
+    catch{ return {}; }
+  }
+  function setPinFor(uid, pin){
+    const m = getPinMap();
+    m[uid] = pin;
+    localStorage.setItem(KEY_PIN, JSON.stringify(m));
+  }
+  function checkPin(uid, pin){
+    const m = getPinMap();
+    return m[uid] === pin;
+  }
+
+  async function ensureAnon(){
+    const cred = await signInAnonymously(auth);
+    return cred.user;
+  }
+
+  function goHome(user, name){
+    localStorage.setItem("sns_user", JSON.stringify({ uid: user.uid, name }));
+    location.href = "./index.html";
+  }
+
+  $("signupBtn").onclick = async () => {
+    try{
+      if (!$("agree").checked) return show("利用規約に同意してね");
+      const name = $("name").value.trim();
+      const pin  = $("pin").value.trim();
+      if (!name) return show("名前を入れてね");
+      if (!validPin(pin)) return show("暗証番号は4桁の数字にしてね（例：1234）");
+
+      const user = await ensureAnon();
+      setPinFor(user.uid, pin);
+      show("登録成功！");
+      goHome(user, name);
+    }catch(e){
+      show("登録失敗：\n" + (e?.message || e));
+    }
+  };
+
+  $("loginBtn").onclick = async () => {
+    try{
+      const name = $("name").value.trim();
+      const pin  = $("pin").value.trim();
+      if (!name) return show("名前を入れてね");
+      if (!validPin(pin)) return show("暗証番号は4桁の数字にしてね（例：1234）");
+
+      const user = await ensureAnon();
+
+      // 初回端末なら「その端末のPIN」として登録して通す（学校提出向けの簡易仕様）
+      const m = getPinMap();
+      if (!m[user.uid]) setPinFor(user.uid, pin);
+
+      if (!checkPin(user.uid, pin)) return show("暗証番号が違うよ");
+
+      show("ログイン成功！");
+      goHome(user, name);
+    }catch(e){
+      show("ログイン失敗：\n" + (e?.message || e));
+    }
+  };
+</script>
+</body>
+</html>
+

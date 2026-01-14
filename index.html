@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>保護者SNSβ版</title>
+  <style>
+    :root{
+      --bg:#f3f4f6;
+      --text:#111827;
+      --mut:#6b7280;
+      --line:#e5e7eb;
+      --g1:#c9f6d2;   /* 緑寄り */
+      --g2:#a7c7ff;   /* 青寄り */
+      --shadow: 0 10px 22px rgba(0,0,0,.10);
+      --r:22px;
+    }
+    body{ margin:0; font-family:system-ui,-apple-system; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:420px; margin:0 auto; padding:18px 16px 96px; }
+
+    /* 上の時間/充電は “描かない”。ただし安全余白だけ確保 */
+    .safeTop{ padding-top: env(safe-area-inset-top); }
+
+    .topbar{
+      display:flex; justify-content:space-between; align-items:center;
+      padding: 8px 4px 10px;
+    }
+    .profileBtn{
+      width:44px; height:44px; border:none; background:transparent; cursor:pointer;
+      font-size:34px; line-height:1;
+    }
+    h1{
+      margin: 18px 0 18px;
+      text-align:center;
+      font-size:34px;
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+
+    .bigbtn{
+      width:100%;
+      padding:28px 18px;
+      border:none;
+      border-radius: var(--r);
+      font-size:22px;
+      font-weight:900;
+      cursor:pointer;
+      background: linear-gradient(135deg, var(--g1), var(--g2));
+      box-shadow: var(--shadow);
+    }
+    .sp{ height:18px; }
+
+    .notice{
+      margin-top:18px;
+      background:#bdbdbd;
+      border-radius:14px;
+      padding:14px;
+      font-weight:800;
+      line-height:1.35;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    /* 下ナビ */
+    .nav{
+      position:fixed; left:0; right:0; bottom:0;
+      background:#fff;
+      border-top:1px solid var(--line);
+      padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+      display:flex; justify-content:space-around; align-items:center;
+    }
+    .nav button{
+      border:none; background:transparent; cursor:pointer;
+      font-size:40px; line-height:1;
+    }
+    .nav .active{ outline:3px solid #111; outline-offset:6px; border-radius:12px; }
+
+    /* プロフィール（👤） */
+    dialog{
+      border:none;
+      border-radius:16px;
+      width:min(420px, 92vw);
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+    .dlgTop{ display:flex; justify-content:space-between; align-items:center; }
+    .dlgTitle{ font-weight:900; font-size:16px; }
+    .closeBtn{ border:none; background:transparent; cursor:pointer; font-size:18px; }
+    .muted{ color:var(--mut); font-size:12px; }
+    .linkbtn{
+      width:100%;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .logout{
+      border-color:#ef4444;
+      color:#ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="safeTop"></div>
+
+  <div class="wrap">
+    <div class="topbar">
+      <div></div>
+      <button class="profileBtn" id="profileBtn" aria-label="profile">👤</button>
+    </div>
+
+    <h1>保護者SNSβ版</h1>
+
+    <button class="bigbtn" id="goTimeline">タイムライン</button>
+    <div class="sp"></div>
+    <button class="bigbtn" id="goRecipe">レシピ共有</button>
+
+    <div class="notice" id="goForm">
+      このアプリに対する意見や不具合の報告は<br>ここをタップ
+    </div>
+<div class="notice" id="goHelp" style="background:#d9d9d9;">
+  使い方説明（ここをタップ）
+</div>
+
+  </div>
+
+  <div class="nav">
+    <button id="navHome" class="active" title="home">🏠</button>
+    <button id="navRecipe" title="recipe">🍲</button>
+  </div>
+
+  <dialog id="profileDlg">
+    <div class="dlgTop">
+      <div class="dlgTitle">アカウント</div>
+      <button class="closeBtn" id="closeDlg">✕</button>
+    </div>
+    <div class="muted" id="accName" style="margin-top:8px;"></div>
+
+    <div style="margin-top:12px; display:grid; gap:10px;">
+      <button class="linkbtn" id="openTerms" type="button">利用規約を見る</button>
+      <button class="linkbtn logout" id="logoutBtn" type="button">ログアウト</button>
+    </div>
+  </dialog>
+
+  <script>
+    // ログインしてなければ auth へ
+    const me = JSON.parse(localStorage.getItem("sns_user"));
+    if (!me?.uid) location.href = "./auth.html";
+    document.getElementById("accName").textContent = `アカウント名：${me.name}`;
+
+    // 画面遷移
+    document.getElementById("goTimeline").onclick = () => location.href = "./timeline.html";
+    document.getElementById("goRecipe").onclick  = () => location.href = "./recipe.html";
+    document.getElementById("navHome").onclick   = () => location.href = "./index.html";
+    document.getElementById("navRecipe").onclick = () => location.href = "./recipe.html";
+
+    // フォーム（ここをタップ）
+    document.getElementById("goForm").onclick = () => {
+location.href = "https://forms.gle/NCbssBbhx12MSjJg9";
+    };
+document.getElementById("goHelp").onclick = () => location.href = "./help.html";
+
+    // 👤
+    const dlg = document.getElementById("profileDlg");
+    document.getElementById("profileBtn").onclick = () => dlg.showModal();
+    document.getElementById("closeDlg").onclick = () => dlg.close();
+
+    document.getElementById("openTerms").onclick = () => location.href = "./terms.html";
+
+    document.getElementById("logoutBtn").onclick = () => {
+      localStorage.removeItem("sns_user");
+      location.href = "./auth.html";
+    };
+  </script>
+</body>
+</html>
+
