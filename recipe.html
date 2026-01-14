@@ -301,6 +301,10 @@ function render(){
 
   // ★投稿（必須なし：空でも保存OK）
   btn.onclick = async () => {
+console.log("submit start");
+
+btn.disabled = true;
+
     msg.textContent = "投稿中…";
 
     try {
@@ -328,9 +332,13 @@ photoUrl: (photoUrl.value || "").trim(),
       preview.style.display = "none";
       preview.src = "";
       msg.textContent = "投稿しました！";
-    } catch (e) {
-      msg.textContent = "投稿失敗 → " + (e?.message || e);
-    }
+btn.disabled = false;
+
+} catch (e) {
+  console.error(e);
+  msg.textContent = "投稿失敗 → " + (e?.message || e);
+  btn.disabled = false;
+}
   };
 
   // 削除
