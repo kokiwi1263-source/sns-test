@@ -182,7 +182,7 @@
 
   // ★Storage追加
   import {
-    getStorage, ref, uploadBytes, getDownloadURL
+    getStorage, ref, uploadBytes, getDownloadURL, setDoc
   } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
   const firebaseConfig = {
@@ -389,9 +389,19 @@ photoUrl: (photoUrl.value || "").trim(),
   scope.onchange = render;
   qInput.oninput = render;
 
-  onAuthStateChanged(auth, (user) => {
-    if (!user) location.href = "./auth.html";
-  });
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+
+  await setDoc(doc(db, "users", user.uid), {
+    uid: user.uid,
+    email: user.email || "",
+    name: user.displayName || "",
+    lastLoginAt: serverTimestamp(),
+    createdAt: serverTimestamp()
+  }, { merge: true });
+
+  // ↓ ここから下は元の処理を残す
+});
 </script>
 </body>
 </html>

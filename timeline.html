@@ -79,7 +79,7 @@ document.getElementById("navRecipe").onclick = () => location.href = "./recipe.h
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, onSnapshot, doc, deleteDoc,
+  query, orderBy, onSnapshot, doc, deleteDoc,getDocs, setDoc
   runTransaction
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
@@ -265,9 +265,19 @@ if (r) {
   scope.onchange = render;
   qInput.oninput = render;
 
-  onAuthStateChanged(auth, (user) => {
-    if (!user) location.href = "./auth.html";
-  });
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+
+  await setDoc(doc(db, "users", user.uid), {
+    uid: user.uid,
+    email: user.email || "",
+    name: user.displayName || "",
+    lastLoginAt: serverTimestamp(),
+    createdAt: serverTimestamp()
+  }, { merge: true });
+
+  // ↓ ここから下は元の処理を残す
+});
 </script>
 </body>
 </html>
