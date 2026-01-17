@@ -264,42 +264,44 @@ function render(){
   const shown = latest.filter(match);
   list.innerHTML = "";
 
-const uid = auth.currentUser?.uid || null;
-const likes = Array.isArray(p.likes) ? p.likes : [];
-const liked = uid ? likes.includes(uid) : false;
+  shown.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.style.cursor = "pointer";
 
-div.innerHTML = `
-  <div style="font-weight:900;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-    ${esc(p.menuName || "（メニュー名なし）")}
-  </div>
+    const uid = auth.currentUser?.uid || null;
+    const likes = Array.isArray(p.likes) ? p.likes : [];
+    const liked = uid ? likes.includes(uid) : false;
 
-  <div style="margin-top:8px;display:flex;gap:10px;align-items:center;">
-    <button class="likeBtn" data-id="${p.id}" type="button"
-      style="padding:6px 10px;border-radius:10px;border:1px solid #ccc;background:#fff;">
-      ${liked ? "♥" : "♡"} いいね
-    </button>
-    <span style="font-size:14px;">${likes.length}</span>
-  </div>
-`;
-const likeBtn = div.querySelector(".likeBtn");
-likeBtn.addEventListener("click", async (e) => {
-  e.stopPropagation(); // カードクリック（詳細へ移動）を止める
-  const uid = auth.currentUser?.uid;
-  if (!uid) return alert("ログインしてね");
+    div.innerHTML = `
+      <div style="font-weight:900;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        ${esc(p.menuName || "（メニュー名なし）")}
+      </div>
 
-  const ref = doc(db, "recipes", p.id);
+      <div style="margin-top:8px;display:flex;gap:10px;align-items:center;">
+        <button class="likeBtn" data-id="${p.id}" type="button"
+          style="padding:6px 10px;border-radius:10px;border:1px solid #ccc;background:#fff;">
+          ${liked ? "♥" : "♡"} いいね
+        </button>
+        <span style="font-size:14px;">${likes.length}</span>
+      </div>
+    `;
 
-  // 今の状態でトグル（簡易）
-  const nowLiked = likeBtn.textContent.includes("♥");
-  if (nowLiked) {
-    await updateDoc(ref, { likes: arrayRemove(uid) });
-  } else {
-    await updateDoc(ref, { likes: arrayUnion(uid) });
-  }
-  // onSnapshot が走って一覧が自動で描き直される
-});
+    const likeBtn = div.querySelector(".likeBtn");
+    likeBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const uid = auth.currentUser?.uid;
+      if (!uid) return alert("ログインしてね");
 
-    // 押したら別ページへ
+      const ref = doc(db, "recipes", p.id);
+      const nowLiked = likeBtn.textContent.includes("♥");
+      if (nowLiked) {
+        await updateDoc(ref, { likes: arrayRemove(uid) });
+      } else {
+        await updateDoc(ref, { likes: arrayUnion(uid) });
+      }
+    });
+
     div.onclick = () => {
       location.href = "./recipe_detail.html?id=" + p.id;
     };
