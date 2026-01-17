@@ -296,6 +296,8 @@ likeBtn.addEventListener("click", async (e) => {
 
   const uid = auth.currentUser?.uid;
   if (!uid) return alert("ログインしてね");
+alert("p.id=" + p.id);
+if (!p.id) return alert("p.idが空です（idが入ってない）");
 
   const ref = doc(db, "recipes", p.id);
   const nowLiked = likeBtn.textContent.includes("♥");
@@ -307,9 +309,10 @@ likeBtn.addEventListener("click", async (e) => {
       await updateDoc(ref, { likes: arrayUnion(uid) });
     }
     alert("Firestore更新OK"); // ← 動作確認用（後で消してOK）
-  } catch (err) {
-    alert("更新失敗: " + err.code); // permission-denied が出たらルール問題
-  }
+} catch (err) {
+  console.log("like error:", err);
+  alert("更新失敗: " + (err?.message || err));
+}
 });
 
     div.onclick = () => {
@@ -367,10 +370,10 @@ photoUrl: (photoUrl.value || "").trim(),
       msg.textContent = "投稿しました！";
 btn.disabled = false;
 
-} catch (e) {
-  console.error(e);
-  msg.textContent = "投稿失敗 → " + (e?.message || e);
-  btn.disabled = false;
+} catch (err) {
+  console.log("like error:", err);
+  alert("更新失敗: " + (err?.message || err));
+}
 }
   };
 
