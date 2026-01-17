@@ -310,8 +310,9 @@ if (!p.id) return alert("p.idが空です（idが入ってない）");
     }
     alert("Firestore更新OK"); // ← 動作確認用（後で消してOK）
 } catch (err) {
-  console.log("like error:", err);
-  alert("更新失敗: " + (err?.message || err));
+  console.log("like error raw:", err);
+  console.log("like error string:", String(err));
+  alert("更新失敗: " + (err?.code || err?.message || String(err)));
 }
 });
 
