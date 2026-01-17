@@ -292,12 +292,10 @@ likeBtn.addEventListener("click", async (e) => {
   e.preventDefault();
   e.stopPropagation();
 
-  alert("いいねクリックOK"); // ← 動作確認用（後で消してOK）
+  alert("いいね完了"); // ← 動作確認用（後で消してOK）
 
   const uid = auth.currentUser?.uid;
   if (!uid) return alert("ログインしてね");
-alert("p.id=" + p.id);
-if (!p.id) return alert("p.idが空です（idが入ってない）");
 
   const ref = doc(db, "recipes", p.id);
   const nowLiked = likeBtn.textContent.includes("♥");
@@ -308,11 +306,9 @@ if (!p.id) return alert("p.idが空です（idが入ってない）");
     } else {
       await updateDoc(ref, { likes: arrayUnion(uid) });
     }
-    alert("Firestore更新OK"); // ← 動作確認用（後で消してOK）
 } catch (err) {
   console.log("like error raw:", err);
   console.log("like error string:", String(err));
-  alert("更新失敗: " + (err?.code || err?.message || String(err)));
 }
 });
 
