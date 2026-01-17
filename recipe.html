@@ -288,19 +288,29 @@ function render(){
     `;
 
     const likeBtn = div.querySelector(".likeBtn");
-    likeBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const uid = auth.currentUser?.uid;
-      if (!uid) return alert("ログインしてね");
+likeBtn.addEventListener("click", async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
 
-      const ref = doc(db, "recipes", p.id);
-      const nowLiked = likeBtn.textContent.includes("♥");
-      if (nowLiked) {
-        await updateDoc(ref, { likes: arrayRemove(uid) });
-      } else {
-        await updateDoc(ref, { likes: arrayUnion(uid) });
-      }
-    });
+  alert("いいねクリックOK"); // ← 動作確認用（後で消してOK）
+
+  const uid = auth.currentUser?.uid;
+  if (!uid) return alert("ログインしてね");
+
+  const ref = doc(db, "recipes", p.id);
+  const nowLiked = likeBtn.textContent.includes("♥");
+
+  try {
+    if (nowLiked) {
+      await updateDoc(ref, { likes: arrayRemove(uid) });
+    } else {
+      await updateDoc(ref, { likes: arrayUnion(uid) });
+    }
+    alert("Firestore更新OK"); // ← 動作確認用（後で消してOK）
+  } catch (err) {
+    alert("更新失敗: " + err.code); // permission-denied が出たらルール問題
+  }
+});
 
     div.onclick = () => {
       location.href = "./recipe_detail.html?id=" + p.id;
