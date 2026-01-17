@@ -369,13 +369,13 @@ photoUrl: (photoUrl.value || "").trim(),
       ingredients.value = "";
       steps.value = "";
       msg.textContent = "投稿しました！";
-btn.disabled = false;
 
-} catch (err) {
-  console.log("like error:", err);
-  alert("更新失敗: " + (err?.message || err));
-}
-}
+    } catch (err) {
+      console.log("post error:", err);
+      alert("投稿失敗: " + (err?.message || err));
+    } finally {
+      btn.disabled = false;
+    }
   };
 
   // 削除
