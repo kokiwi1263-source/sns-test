@@ -275,17 +275,21 @@ if (r) {
   qInput.oninput = render;
 
 onAuthStateChanged(auth, async (user) => {
+  alert("auth=" + (user ? user.uid : "null"));
   if (!user) return;
 
-  await setDoc(doc(db, "users", user.uid), {
-    uid: user.uid,
-    email: user.email || "",
-    name: user.displayName || "",
-    lastLoginAt: serverTimestamp(),
-    createdAt: serverTimestamp()
-  }, { merge: true });
+  try {
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      createdAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp()
+    }, { merge: true });
 
-  // ↓ ここから下は元の処理を残す
+    alert("users write OK");
+  } catch (e) {
+    alert("users write NG: " + (e?.code || e?.message || String(e)));
+    console.log(e);
+  }
 });
 </script>
 </body>
