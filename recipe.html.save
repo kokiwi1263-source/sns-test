@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>レシピ共有</title>
+  <style>
+    :root{
+      --bg:#f7efe6;
+      --card:#fffaf4;
+      --text:#3b2f2a;
+      --mut:#7a6a61;
+      --line:#ead9cc;
+      --accent:#e3a98b;
+      --shadow: 0 10px 22px rgba(0,0,0,.10);
+      --r:22px;
+    }
+    body{ margin:0; font-family:system-ui,-apple-system; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:820px; margin:0 auto; padding:18px 14px 96px; }
+    header{ display:flex; justify-content:space-between; align-items:center; padding:8px 4px 10px; gap:10px; }
+    .title{ font-size:22px; font-weight:900; letter-spacing:.02em; }
+    .muted{ color:var(--mut); font-size:12px; white-space:pre-wrap; }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--r);
+      padding:14px;
+      box-shadow: var(--shadow);
+      margin-bottom:14px;
+    }
+    input, select, textarea, button{
+      width:100%;
+      box-sizing:border-box;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      margin-top:10px;
+      font-size:14px;
+      background:#fff;
+      color:var(--text);
+    }
+    textarea{ resize:vertical; }
+    button{
+      border:none;
+      background: linear-gradient(135deg, #f3cbb7, #e3a98b);
+      font-weight:900;
+      cursor:pointer;
+    }
+    .row{ display:flex; gap:10px; }
+    .row > *{ flex:1; }
+    .pill{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#f3cbb7;
+      font-size:12px;
+      font-weight:900;
+      margin-right:6px;
+    }
+    .danger{ background:#ef4444 !important; color:#fff; }
+    .small{ width:auto; padding:8px 12px; border-radius:999px; font-size:12px; border:none; cursor:pointer; }
+    .img{
+      width:100%;
+      border-radius:16px;
+      border:1px solid var(--line);
+      margin-top:10px;
+      display:block;
+    }
+
+    /* 一覧：タイトルだけ */
+    details.item{
+      border-top:1px dashed var(--line);
+      padding-top:12px;
+      margin-top:12px;
+    }
+    details.item summary{
+      list-style:none;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    details.item summary::-webkit-details-marker{ display:none; }
+    .sumLeft{ min-width:0; }
+    .sumTitle{
+      font-weight:900;
+      font-size:18px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .sumMeta{ margin-top:4px; }
+    .chev{ font-size:18px; opacity:.7; }
+
+    /* 下ナビ */
+    .nav{
+      position:fixed; left:0; right:0; bottom:0;
+      background:#fffaf4;
+      border-top:1px solid var(--line);
+      padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+      display:flex; justify-content:space-around; align-items:center;
+    }
+    .nav button{
+      width:auto; border:none; background:transparent; font-size:34px;
+      cursor:pointer; padding:6px 12px; border-radius:14px;
+    }
+
+    .hint{ margin-top:6px; font-size:12px; color:var(--mut); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="title">レシピ共有</div>
+        <div class="muted" id="userInfo"></div>
+      </div>
+      <button class="small danger" id="logout">ログアウト</button>
+    </header>
+
+    <!-- 投稿フォーム -->
+    <div class="card">
+      <div class="row">
+        <input id="menuName" placeholder="メニュー名（例：チキンカレー）">
+        <select id="cat">
+          <option value="主菜">主菜</option>
+          <option value="副菜">副菜</option>
+          <option value="汁物">汁物</option>
+          <option value="おやつ">おやつ</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      <textarea id="ingredients" rows="4" placeholder="材料（例）&#10;・鶏もも 300g&#10;・玉ねぎ 1個&#10;・カレールー 1/2箱"></textarea>
+      <textarea id="steps" rows="6" placeholder="作り方（例）&#10;1. 玉ねぎを切る&#10;2. 鶏肉を炒める&#10;3. 煮込んでルーを入れる"></textarea>
+
+      <!-- 画像を画面内で選ぶ -->
+<input id="photoUrl" placeholder="写真URL（任意）">
+<div class="hint">※画像URLを貼ると、投稿に表示されます</div>
+
+      <button id="btn">レシピを投稿</button>
+      <div id="msg" class="muted"></div>
+    </div>
+
+    <!-- 検索＆絞り込み -->
+    <div class="card">
+      <div class="row">
+        <select id="filterCat">
+          <option value="ALL">カテゴリ：すべて</option>
+          <option value="主菜">主菜</option>
+          <option value="副菜">副菜</option>
+          <option value="汁物">汁物</option>
+          <option value="おやつ">おやつ</option>
+          <option value="その他">その他</option>
+        </select>
+        <select id="scope">
+          <option value="ALL">表示：全員</option>
+          <option value="MINE">表示：自分だけ</option>
+        </select>
+      </div>
+      <input id="q" placeholder="検索（タイトル/材料/作り方）">
+      <div class="muted" id="count"></div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <!-- 下ナビ -->
+  <div class="nav">
+    <button id="navHome" title="home">🏠</button>
+    <button id="navRecipe" title="recipe">🍲</button>
+    <button id="navTimeline" title="timeline">🗒️</button>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+  import {
+import {
+  getFirestore, collection, addDoc, serverTimestamp,
+  query, orderBy, onSnapshot, doc, deleteDoc,
+  updateDoc, arrayUnion, arrayRemove
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+  // ★Storage追加
+  import {
+    getStorage, ref, uploadBytes, getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBsL9VrxyefbumHUKsQRfgoGQf2tJkYZtE",
+    authDomain: "parent-beta-sns.firebaseapp.com",
+    projectId: "parent-beta-sns",
+    storageBucket: "parent-beta-sns.firebasestorage.app",
+    messagingSenderId: "331616157000",
+    appId: "1:331616157000:web:01e55e9d864e93028c077d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+
+  const me = JSON.parse(localStorage.getItem("sns_user"));
+  if (!me?.uid) location.href = "./auth.html";
+
+  const userInfo = document.getElementById("userInfo");
+  const logoutBtn = document.getElementById("logout");
+  const msg = document.getElementById("msg");
+
+  const btn = document.getElementById("btn");
+  const menuName = document.getElementById("menuName");
+  const ingredients = document.getElementById("ingredients");
+  const steps = document.getElementById("steps");
+const photoUrl = document.getElementById("photoUrl");
+
+  const filterCat = document.getElementById("filterCat");
+  const scope = document.getElementById("scope");
+  const qInput = document.getElementById("q");
+  const count = document.getElementById("count");
+  const list = document.getElementById("list");
+
+  userInfo.textContent = `${me.name} さんでログイン中`;
+
+  logoutBtn.onclick = () => {
+    localStorage.removeItem("sns_user");
+    location.href = "./auth.html";
+  };
+
+  // 下ナビ
+  document.getElementById("navHome").onclick = () => location.href = "./index.html";
+  document.getElementById("navRecipe").onclick = () => location.href = "./recipe.html";
+  document.getElementById("navTimeline").onclick = () => location.href = "./timeline.html";
+
+  function esc(s){
+    return String(s ?? "").replace(/[&<>"']/g, m =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
+    );
+  }
+
+  // 画像プレビュー
+
+  // recipes
+  const recipesRef = collection(db, "recipes");
+  const qRecipes = query(recipesRef, orderBy("createdAt", "desc"));
+  let latest = [];
+
+  function match(p){
+    if (scope.value === "MINE" && p.uid !== me.uid) return false;
+    if (filterCat.value !== "ALL" && p.cat !== filterCat.value) return false;
+
+    const kw = qInput.value.trim().toLowerCase();
+    if (!kw) return true;
+
+    const blob = (
+      (p.menuName||"") + " " +
+      (p.ingredients||"") + " " +
+      (p.steps||"") + " " +
+      (p.name||"")
+    ).toLowerCase();
+
+    return blob.includes(kw);
+  }
+
+function render(){
+  const shown = latest.filter(match);
+  list.innerHTML = "";
+
+  shown.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.style.cursor = "pointer";
+
+    // 一覧は「料理名だけ」
+    div.innerHTML = `
+      <div style="font-weight:900;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        ${esc(p.menuName || "（メニュー名なし）")}
+      </div>
+    `;
+
+    // 押したら別ページへ
+    div.onclick = () => {
+      location.href = "./recipe_detail.html?id=" + p.id;
+    };
+
+    list.appendChild(div);
+  });
+
+  count.textContent = `表示：${shown.length} 件 / 全体：${latest.length} 件`;
+}
+onSnapshot(qRecipes
+    latest = snap.docs.map(d => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        timeText: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString() : ""
+      };
+    });
+    render();
+  });
+
+  // ★投稿（必須なし：空でも保存OK）
+  btn.onclick = async () => {
+console.log("submit start");
+
+btn.disabled = true;
+
+    msg.textContent = "投稿中…";
+
+    try {
+      const m = menuName.value.trim() || "（未入力）";
+      const ing = ingredients.value.trim() || "";
+      const st = steps.value.trim() || "";
+      const cat = document.getElementById("cat").value;
+
+
+      msg.textContent = "保存中…";
+      await addDoc(recipesRef, {
+        uid: me.uid,
+        name: me.name,
+        menuName: m,
+        cat,
+        ingredients: ing,
+        steps: st,
+photoUrl: (photoUrl.value || "").trim(),
+        createdAt: serverTimestamp()
+      });
+
+      menuName.value = "";
+      ingredients.value = "";
+      steps.value = "";
+      msg.textContent = "投稿しました！";
+btn.disabled = false;
+
+} catch (e) {
+  console.error(e);
+  msg.textContent = "投稿失敗 → " + (e?.message || e);
+  btn.disabled = false;
+}
+  };
+
+  // 削除
+  list.addEventListener("click", async (e) => {
+    const b = e.target.closest("button[data-del]");
+    if (!b) return;
+    const id = b.getAttribute("data-del");
+    const p = latest.find(x => x.id === id);
+    if (!p || p.uid !== me.uid) return;
+    if (!confirm("このレシピを削除しますか？")) return;
+    await deleteDoc(doc(db, "recipes", id));
+  });
+
+  filterCat.onchange = render;
+  scope.onchange = render;
+  qInput.oninput = render;
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) location.href = "./auth.html";
+  });
+</script>
+</body>
+</html>
+
