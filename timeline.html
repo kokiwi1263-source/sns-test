@@ -78,8 +78,17 @@ document.getElementById("navRecipe").onclick = () => location.href = "./recipe.h
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, onSnapshot, doc, deleteDoc,getDocs, setDoc
+  getFirestore,
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  deleteDoc,
+  getDocs,
+  setDoc,
   runTransaction
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
