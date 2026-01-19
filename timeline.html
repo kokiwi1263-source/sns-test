@@ -275,21 +275,14 @@ if (r) {
   qInput.oninput = render;
 
 onAuthStateChanged(auth, async (user) => {
-  alert("auth=" + (user ? user.uid : "null"));
   if (!user) return;
 
-  try {
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       createdAt: serverTimestamp(),
       lastLoginAt: serverTimestamp()
     }, { merge: true });
 
-    alert("users write OK");
-  } catch (e) {
-    alert("users write NG: " + (e?.code || e?.message || String(e)));
-    console.log(e);
-  }
 });
 </script>
 </body>
